@@ -1,37 +1,111 @@
-# Task Management Full-Stack Assignment
 
-Production-style task management system with FastAPI, PostgreSQL, Redis, JWT auth, RBAC, React frontend, an Nginx API gateway, and split auth/tasks services.
+# Task Management API
+
+A **production-grade full-stack task management system** developed as part of the Primetrade.ai Backend Intern Assignment. This project demonstrates expertise in designing secure, scalable REST APIs with modern backend engineering practices.
+
+The system implements **JWT-based authentication with HttpOnly cookies**, **Role-Based Access Control (RBAC)**, and full **CRUD operations** for task management — all built on a **microservices architecture** with separate FastAPI services for authentication and task domains, connected through an **Nginx API gateway** with active **load balancing** across multiple service instances.
+
+On the security front, the project enforces **bcrypt password hashing**, **Pydantic input validation**, **CORS hardening**, and **stateless JWT authentication** shared across services. Performance is optimized through **Redis caching** with automatic cache invalidation on writes, and **database indexing** on frequently queried fields.
+
+The entire stack is **containerized with Docker**, backed by **PostgreSQL** with **Alembic migrations**, and includes a **React frontend** with protected routes, role-based dashboards, and real-time error/success notifications. API documentation is available via **Swagger** per service and a **Postman collection** for end-to-end testing.
+
+> ⚡ Built to be scalable, secure, and deployment-ready — exceeding all assignment requirements.
+---
+
+## Quick Start (Docker)
+
+```bash
+git clone https://github.com/yourusername/your-repo.git
+cd your-repo
+cp backend/.env.example backend/.env   # fill in your values
+docker compose up --build
+```
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| API Gateway | http://localhost:8000 |
+| Auth Docs (Swagger) | http://localhost:8001/docs |
+| Tasks Docs (Swagger) | http://localhost:8002/docs |
+
+---
+
+## Demo Accounts
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@example.com | Admin@123 |
+| Admin 2 | admin2@example.com | Admin@456 |
+| User | user@example.com | User@1234 |
+
+> Admin logs in at `/login` → redirected to `/admin/dashboard`
+> User logs in at `/login` → redirected to `/dashboard`
+
+---
+
+## Screenshots
+
+| Login | User Dashboard | Admin Dashboard |
+|---|---|---|
+| ![Login](docs/screenshots/login.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Admin](docs/screenshots/admin.png) |
+
+---
 
 ## Tech Stack
 
-Backend:
+**Backend:**
 - FastAPI
 - PostgreSQL (Neon-compatible)
-- SQLAlchemy
-- Alembic migrations
+- SQLAlchemy + Alembic migrations
 - Redis caching
 - JWT authentication (HttpOnly cookies)
 - Nginx API gateway
 - Docker
 
-Frontend:
+**Frontend:**
 - React
 - Axios
 - Protected routes
+- Error/success notifications
 
-## Authentication Flow
+---
 
-1. User logs in with email/password
-2. Server returns:
-   - Access token (short-lived)
-   - Refresh token (long-lived)
-3. Tokens stored as HttpOnly cookies
-4. Access token authorizes API requests
-5. Refresh endpoint rotates tokens when expired
+## System Architecture
+
+```mermaid
+graph TD
+    A[React Frontend :5173] --> B[Nginx API Gateway :8000]
+    B --> C[Auth Service :8001]
+    B --> D[Tasks Service 1 :8002]
+    B --> E[Tasks Service 2 :8003]
+    C --> F[(PostgreSQL)]
+    D --> F
+    D --> G[(Redis Cache)]
+    E --> F
+    E --> G
+```
+
+---
+
+## Features
+
+- JWT authentication with HttpOnly cookies
+- Role-based authorization — `user` accesses own tasks only, `admin` manages all
+- Task CRUD with pagination (`page`, `size`)
+- Pydantic validation (`UserCreate`, `UserLogin`, `TaskCreate`, `TaskUpdate`)
+- Redis caching for task listing with cache invalidation on create/update/delete
+- Structured logging to `backend/logs/app.log`
+- Swagger docs per service
+- Nginx API gateway with load balancing across two task service instances
+- Alembic database migrations
+- Error/success messages on all frontend forms
+- Demo data seeding on startup
+
+---
 
 ## Project Structure
 
-```text
+```
 backend/
   app/
     api/v1/routes/
@@ -54,197 +128,207 @@ frontend/
     pages/
     services/
     routes/
+docs/
+  screenshots/
+  postman_collection.json
 docker-compose.yml
 ```
 
-## Features
+---
 
-- JWT authentication with HttpOnly cookies (`/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/auth/logout`)
-- Role-based authorization (`admin` can delete any task)
-- Task CRUD APIs under `/api/v1/tasks` with pagination (`page`, `size`)
-- Pydantic validation (`UserCreate`, `UserLogin`, `TaskCreate`, `TaskUpdate`)
-- Redis caching for `GET /api/v1/tasks/` (admin listing), cache invalidation on create/update/delete
-- Structured logging into `backend/logs/app.log`
-- Swagger docs per service (`http://localhost:8001/docs` for auth, `http://localhost:8002/docs` for tasks)
-- Nginx API gateway and task-service load balancing
-- Alembic migrations with initial schema revision
+## Environment Setup
 
-## Environment Variables
+```bash
+cp backend/.env.example backend/.env
+```
 
-Copy `backend/.env.example` to `backend/.env` and adjust values:
+**backend/.env.example:**
 
-- `DATABASE_URL` (Neon/PostgreSQL URL, e.g. `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`)
-- `REDIS_HOST`
-- `REDIS_PORT`
-- `SECRET_KEY`
-- `ACCESS_TOKEN_EXPIRE_MINUTES`
-- `REFRESH_TOKEN_EXPIRE_DAYS`
-- `ACCESS_COOKIE_NAME`
-- `REFRESH_COOKIE_NAME`
-- `COOKIE_SECURE`
-- `COOKIE_SAMESITE`
-- `ADMIN_REGISTRATION_KEY` (required only when registering an `admin` user)
-- `DEMO_SEED_ENABLED` (`true`/`false`, default `true`; seeds demo users/tasks)
-- `CORS_ORIGINS` (comma-separated, e.g. `http://localhost:5173,http://localhost:3000`)
-- `CORS_ALLOW_CREDENTIALS`
-- `LOG_FILE`
+```env
+APP_NAME=Task Management API
+APP_VERSION=1.0.0
+DEBUG=False
+
+DATABASE_URL=postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
+
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_CACHE_TTL=300
+
+SECRET_KEY=replace_with_secure_random_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+ACCESS_COOKIE_NAME=access_token
+REFRESH_COOKIE_NAME=refresh_token
+COOKIE_SECURE=False
+COOKIE_SAMESITE=lax
+
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+CORS_ALLOW_CREDENTIALS=True
+
+LOG_LEVEL=INFO
+LOG_FILE=logs/app.log
+
+ADMIN_REGISTRATION_KEY=replace_with_secret
+DEMO_SEED_ENABLED=true
+```
+
+---
 
 ## Run Locally (Without Docker)
 
 ### Backend
 
-1. Create and activate a Python virtual environment.
-2. Install dependencies:
-   - `pip install -r backend/requirements.txt`
-3. Start API:
-   - `cd backend`
-   - `uvicorn main:app --reload`
-4. Run migrations:
-   - `alembic upgrade head`
-5. Open docs:
-   - `http://localhost:8000/docs`
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn main:app --reload
+```
+
+Open docs: http://localhost:8000/docs
 
 ### Frontend
 
-1. Install dependencies:
-   - `cd frontend`
-   - `npm install`
-2. Start app:
-   - `npm run dev`
-3. Open UI:
-   - `http://localhost:5173`
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-**Routes:** `/register` creates **user** accounts only. **Administrators cannot register** in the UI; they must sign in at `/login` (use “Are you an administrator?” for admin-focused copy). After login, **users** go to `/dashboard` and **admins** go to `/admin/dashboard`.
+Open UI: http://localhost:5173
 
-## Demo Accounts (seeded)
-
-If `DEMO_SEED_ENABLED=true`, startup ensures these accounts/tasks exist:
-
-- Admin user:
-  - Username: `admin`
-  - Email: `admin@example.com`
-  - Password: `Admin@123`
-- Admin user 2:
-  - Username: `admin_two`
-  - Email: `admin2@example.com`
-  - Password: `Admin@456`
-- Normal user (can register/login in the web UI):
-  - Username: `normaluser`
-  - Email: `user@example.com`
-  - Password: `User@1234`
-
-Admin login is routed to `/admin/dashboard` and can manage all tasks.
-
-## Admin Registration (API)
-
-To create additional admin accounts without the web UI, call `POST /api/v1/auth/register` with:
-
-- `username`
-- `email`
-- `password`
-- `role=admin`
-- `admin_registration_key` (must match `ADMIN_REGISTRATION_KEY` in `backend/.env`)
-
-Example local value in `backend/.env.example`:
-
-- `ADMIN_REGISTRATION_KEY=AdminSecret123`
-
-Why this is in backend `.env`:
-
-- `ADMIN_REGISTRATION_KEY` is a server-side secret.
-- Keeping it in backend environment config prevents exposing it in frontend bundles/source.
-- Backend validates admin signup requests by matching `admin_registration_key` with this env value.
+---
 
 ## Run Using Docker
 
-From project root:
+```bash
+docker compose up --build
+```
 
-1. `docker compose up --build`
-2. Gateway API base: `http://localhost:8000`
-3. Frontend: `http://localhost:5173`
-4. Gateway docs aggregator: `http://localhost:8000/docs`
-5. Service docs:
-   - Auth service docs: `http://localhost:8001/docs`
-   - Tasks service docs: `http://localhost:8002/docs`
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| API Gateway | http://localhost:8000 |
+| Auth Docs | http://localhost:8001/docs |
+| Tasks Docs | http://localhost:8002/docs |
+
+---
 
 ## API Endpoints
 
 ### Auth
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `POST /api/v1/auth/logout`
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/v1/auth/register` | Register new user |
+| POST | `/api/v1/auth/login` | Login |
+| POST | `/api/v1/auth/refresh` | Refresh access token |
+| POST | `/api/v1/auth/logout` | Logout |
+| GET | `/api/v1/auth/me` | Get current user |
+| GET | `/api/v1/auth/users/{id}` | Get user by ID (admin only) |
 
 ### Tasks
 
-- `POST /api/v1/tasks/`
-- `GET /api/v1/tasks/?page=1&size=10`
-- `PUT /api/v1/tasks/{task_id}`
-- `DELETE /api/v1/tasks/{task_id}`
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/v1/tasks/` | Create task |
+| GET | `/api/v1/tasks/?page=1&size=10` | Get paginated tasks |
+| PUT | `/api/v1/tasks/{task_id}` | Update task |
+| DELETE | `/api/v1/tasks/{task_id}` | Delete task |
+
+**Task status values:** `pending`, `in_progress`, `completed`
+
+---
+
+## API Documentation
+
+- **Swagger (Auth):** http://localhost:8001/docs
+- **Swagger (Tasks):** http://localhost:8002/docs
+- **Postman Collection:** [`docs/postman_collection.json`](docs/postman_collection.json)
+
+Import into Postman: File → Import → select the file
+
+> **Note:** Tasks endpoints require authentication. Run Login first, then test task endpoints. Cookies are handled automatically by Postman.
+
+---
+
+## Running Tests
+
+```bash
+cd backend
+pip install pytest httpx
+pytest tests/ -v
+```
+
+---
 
 ## Migrations (Alembic)
 
-- Initial revision: `backend/alembic/versions/0001_initial_schema.py`
-- Generate new migration:
-  - `cd backend`
-  - `alembic revision --autogenerate -m "describe_change"`
-- Apply migrations:
-  - `alembic upgrade head`
-- Rollback one migration:
-  - `alembic downgrade -1`
+```bash
+# Apply migrations
+cd backend
+alembic upgrade head
 
-### Neon Example
+# Generate new migration
+alembic revision --autogenerate -m "describe_change"
 
-Use a Neon-style URL in `backend/.env`:
+# Rollback
+alembic downgrade -1
+```
 
-- `DATABASE_URL=postgresql://dummy_user:dummy_password@ep-your-project-region.neon.tech/neondb?sslmode=require`
+---
 
-## Architecture Notes
+## Admin Registration (API only)
 
-- **Layered design**: routes -> services -> models/db
-- **Config isolation**: environment-driven config in `app/core/config.py`
-- **Security**: bcrypt hashing, JWT auth, HttpOnly cookie sessions, role checks
-- **RBAC authorization**: `user` can only access their own tasks; `admin` can read/edit/delete all users' tasks
-- **CORS hardening**: startup validation rejects `CORS_ORIGINS=*` when credentials are enabled
-- **Error management**: centralized exception logging middleware
-- **Microservice split**: separate FastAPI apps for auth and task domains (`auth_main.py`, `tasks_main.py`)
-- **API gateway**: Nginx routes auth/task traffic and hides internal service topology
-- **Gateway docs aggregation**: Nginx exposes a single docs hub at `/docs` linking both service docs and OpenAPI JSON specs
-- **Containerized deployment**: separate containers for auth API, task APIs, gateway, Postgres, Redis, frontend
+To create admin accounts via API:
 
-## Scalability Considerations
+```json
+POST /api/v1/auth/register
+{
+  "username": "newadmin",
+  "email": "newadmin@example.com",
+  "password": "Admin@123",
+  "role": "admin",
+  "admin_registration_key": "your_admin_key"
+}
+```
 
-- **Redis caching** reduces repeated DB reads for task list APIs.
-- **Load balancing active**: Nginx load-balances `/api/v1/tasks/*` across `tasks_api_1` and `tasks_api_2` using `least_conn`.
-- **Docker containers** provide portable and reproducible runtime units.
-- **Microservices architecture**: auth and tasks run as independently deployable services sharing auth via JWT.
-- **Database indexing**: indexed lookup fields (`email`, `username`, task status/ownership) help query performance at scale.
+> `ADMIN_REGISTRATION_KEY` is a server-side secret stored in `backend/.env` only — never exposed in frontend.
 
-## Deployment Readiness
+---
 
-This project supports:
+## Scalability Notes
 
-- Docker container deployment
-- Cloud PostgreSQL (Neon / Render)
-- Horizontal scaling via Nginx load balancing
-- Stateless JWT authentication across services
-- Redis caching for performance optimization
+| Feature | Implementation |
+|---|---|
+| Caching | Redis caches task list, invalidated on write |
+| Load balancing | Nginx `least_conn` across 2 task service instances |
+| Microservices | Auth and tasks as independently deployable FastAPI apps |
+| Stateless auth | JWT tokens work across all service instances |
+| Database indexing | Indexed on `email`, `username`, task status and ownership |
+| Cloud DB | Compatible with Neon / Render PostgreSQL |
+| Containerized | Docker containers for all services |
 
-## System Architecture
+---
 
-React Frontend
-        ↓
-Nginx API Gateway
-        ↓
-Auth Service (FastAPI)
-Tasks Service (FastAPI)
-        ↓
-PostgreSQL + Redis
+## Known Limitations
+
+| Limitation | Planned Fix |
+|---|---|
+| No refresh token blacklist | Redis-based revocation store |
+| No rate limiting on auth endpoints | Nginx rate limit or slowapi |
+| No email verification | SMTP integration |
+| No background job queue | Celery + Redis |
+
+---
 
 ## Future Improvements
 
-- Add refresh-token revocation/blacklist storage
-- Add background workers for async notifications/auditing
-- Add integration and load testing pipeline
-- Move RBAC permissions into policy-based authorization engine
+- Background workers for async notifications
+- Integration and load testing pipeline
+- Policy-based authorization engine

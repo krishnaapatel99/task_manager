@@ -18,9 +18,9 @@ export default function LoginPage() {
       setNotification({ message: "Login successful", type: "success" });
       const meResponse = await api.get("/auth/me");
       if (meResponse.data?.role === "admin") {
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
       } else {
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       }
     } catch (error) {
       setNotification({
@@ -33,7 +33,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto mt-12 max-w-xl px-4">
       <h1 className="mb-2 text-center text-3xl font-bold tracking-tight text-white">
-        {isAdminFocus ? "Administrator sign-in" : "Welcome back"}
+        {isAdminFocus ? "Admin Login" : "Welcome back"}
       </h1>
       <p className="mb-6 text-center text-sm text-slate-300">
         {isAdminFocus
@@ -80,7 +80,7 @@ export default function LoginPage() {
           onClick={() => setIsAdminFocus((prev) => !prev)}
           className="font-semibold text-blue-400 hover:text-blue-300"
         >
-          {isAdminFocus ? "Back to user sign-in" : "Are you an administrator? Click here"}
+          {isAdminFocus ? "Back to user sign-in" : "Are you an admin? Click here"}
         </button>
       </p>
     </div>
